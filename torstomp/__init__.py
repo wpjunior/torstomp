@@ -71,6 +71,22 @@ class TorStomp(object):
 
         return self._send_frame('SEND', headers, body)
 
+    def ack(self, frame):
+        headers = {
+            'subscription': frame.headers['subscription'],
+            'message-id': frame.headers['message-id']
+        }
+
+        return self._send_frame('ACK', headers)
+
+    def nack(self, frame):
+        headers = {
+            'subscription': frame.headers['subscription'],
+            'message-id': frame.headers['message-id']
+        }
+
+        return self._send_frame('NACK', headers)
+
     def _build_io_stream(self):
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM, 0)
         return IOStream(s)
@@ -139,8 +155,7 @@ class TorStomp(object):
                 'Not found subscription %d' % subscription_header)
             return
 
-        message_id = frame.headers.get('message-id')
-        subscription.callback(message_id, frame.headers, frame.body)
+        subscription.callback(frame, frame.body)
 
     def _received_error_frame(self, frame):
         message = frame.headers.get('message')

@@ -2,6 +2,7 @@ from unittest import TestCase
 
 from torstomp import TorStomp
 from torstomp.subscription import Subscription
+from torstomp.frame import Frame
 
 from mock import MagicMock
 
@@ -128,12 +129,12 @@ class TestTorStomp(TestCase):
             'blah\x00')
 
         self.assertEqual(callback.call_count, 1)
-        self.assertEqual(callback.call_args[0][0], '007')
-        self.assertEqual(callback.call_args[0][1], {
-            'destination': '/topic/test', 'message-id': '007',
-            'subscription': '1'
-        })
-        self.assertEqual(callback.call_args[0][2], 'blah')
+
+        frame = callback.call_args[0][0]
+        self.assertIsInstance(frame, Frame)
+        self.assertEqual(frame.headers['message-id'], '007')
+        self.assertEqual(frame.headers['subscription'], '1')
+        self.assertEqual(callback.call_args[0][1], 'blah')
 
     def test_on_error_called(self):
         self.stomp._on_error = MagicMock()
@@ -164,3 +165,37 @@ class TestTorStomp(TestCase):
         self.assertEqual(frame.command, 'FIGHT')
         self.assertEqual(frame.headers, {'teste': '1'})
         self.assertEqual(frame.body, 'ok')
+
+    def test_ack(self):
+        self.stomp.stream = MagicMock()
+
+        frame = Frame('MESSAGE', {
+            'subscription': '123',
+            'message-id': '321'
+        }, 'blah')
+
+        self.stomp.ack(frame)
+        self.assertEqual(self.stomp.stream.write.call_count, 1)
+        self.assertEqual(
+            self.stomp.stream.write.call_args[0][0],
+            'ACK\n'
+            'message-id:321\n'
+            'subscription:123\n\n'
+            '\x00')
+
+    def test_nack(self):
+        self.stomp.stream = MagicMock()
+
+        frame = Frame('MESSAGE', {
+            'subscription': '123',
+            'message-id': '321'
+        }, 'blah')
+
+        self.stomp.nack(frame)
+        self.assertEqual(self.stomp.stream.write.call_count, 1)
+        self.assertEqual(
+            self.stomp.stream.write.call_args[0][0],
+            'NACK\n'
+            'message-id:321\n'
+            'subscription:123\n\n'
+            '\x00')
