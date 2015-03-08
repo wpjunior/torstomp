@@ -72,11 +72,11 @@ class TestTorStomp(TestCase):
         self.assertEqual(self.stomp.stream.write.call_count, 1)
         self.assertEqual(
             self.stomp.stream.write.call_args[0][0],
-            'SUBSCRIBE\n'
-            'ack:client\n'
-            'destination:/topic/test\n'
-            'id:1\n'
-            'my-header:my-value\n\n\x00')
+            b'SUBSCRIBE\n'
+            b'ack:client\n'
+            b'destination:/topic/test\n'
+            b'id:1\n'
+            b'my-header:my-value\n\n\x00')
 
     def test_send_write_in_stream(self):
         self.stomp.stream = MagicMock()
@@ -87,11 +87,11 @@ class TestTorStomp(TestCase):
         self.assertEqual(self.stomp.stream.write.call_count, 1)
         self.assertEqual(
             self.stomp.stream.write.call_args[0][0],
-            'SEND\n'
-            'content-length:2\n'
-            'destination:/topic/test\n'
-            'my-header:my-value\n\n'
-            '{}\x00')
+            b'SEND\n'
+            b'content-length:2\n'
+            b'destination:/topic/test\n'
+            b'my-header:my-value\n\n'
+            b'{}\x00')
 
     def test_set_heart_beat_integration(self):
         self.stomp._set_heart_beat = MagicMock()
@@ -108,7 +108,7 @@ class TestTorStomp(TestCase):
         self.stomp._do_heart_beat()
 
         self.assertEqual(self.stomp.stream.write.call_count, 1)
-        self.assertEqual(self.stomp.stream.write.call_args[0][0], '\n')
+        self.assertEqual(self.stomp.stream.write.call_args[0][0], b'\n')
 
         self.assertEqual(self.stomp._schedule_heart_beat.call_count, 1)
 
@@ -147,17 +147,17 @@ class TestTorStomp(TestCase):
         self.assertEqual(self.stomp._on_error.call_count, 1)
 
         error = self.stomp._on_error.call_args[0][0]
-        self.assertEqual(error.message, 'Invalid error, blah, blah, blah')
+        self.assertEqual(error.args[0], 'Invalid error, blah, blah, blah')
         self.assertEqual(error.detail, 'Detail Error: blah, blah, blah')
 
     def test_on_unhandled_frame(self):
         self.stomp._received_unhandled_frame = MagicMock()
 
         self.stomp._on_data(
-            'FIGHT\n'
-            'teste:1\n'
-            '\n'
-            'ok\x00')
+            b'FIGHT\n'
+            b'teste:1\n'
+            b'\n'
+            b'ok\x00')
 
         self.assertEqual(self.stomp._received_unhandled_frame.call_count, 1)
 
@@ -178,10 +178,10 @@ class TestTorStomp(TestCase):
         self.assertEqual(self.stomp.stream.write.call_count, 1)
         self.assertEqual(
             self.stomp.stream.write.call_args[0][0],
-            'ACK\n'
-            'message-id:321\n'
-            'subscription:123\n\n'
-            '\x00')
+            b'ACK\n'
+            b'message-id:321\n'
+            b'subscription:123\n\n'
+            b'\x00')
 
     def test_nack(self):
         self.stomp.stream = MagicMock()
@@ -195,7 +195,7 @@ class TestTorStomp(TestCase):
         self.assertEqual(self.stomp.stream.write.call_count, 1)
         self.assertEqual(
             self.stomp.stream.write.call_args[0][0],
-            'NACK\n'
-            'message-id:321\n'
-            'subscription:123\n\n'
-            '\x00')
+            b'NACK\n'
+            b'message-id:321\n'
+            b'subscription:123\n\n'
+            b'\x00')

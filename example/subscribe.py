@@ -5,8 +5,8 @@ from tornado.ioloop import IOLoop
 
 from torstomp import TorStomp
 
-def on_message(message_id, headers, message):
-    print message
+def on_message(frame, message):
+    print(message)
 
 logging.basicConfig(
     format="%(asctime)s - %(filename)s:%(lineno)d - "
@@ -15,16 +15,18 @@ logging.basicConfig(
 
 
 def report_error(error):
-    print 'report_error', error
+    print('report_error', error)
 
 @gen.coroutine
 def run():
-    client = TorStomp('localhost', 61613, on_error=report_error)
+    client = TorStomp('localhost', 61613, connect_headers={
+        'heart-beat': '1000,1000'
+    }, on_error=report_error)
 
-    yield client.connect({'heart-beat': '1000,1000'})
+    yield client.connect()
 
     client.send('/queue/corumba', body='ola', headers={})
-    client.subscribe('/queue/corumba', ack='client-individuala', callback=on_message)
+    client.subscribe('/queue/corumba', callback=on_message)
 
 
 def main():

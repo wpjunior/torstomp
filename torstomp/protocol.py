@@ -1,24 +1,41 @@
 import logging
-import codecs
+import sys
 
-from frame import Frame
+from torstomp.frame import Frame
+
+PYTHON3 = sys.hexversion >= 0x03000000
+
+if not PYTHON3:
+    import codecs
+    utf8_decoder = codecs.lookup('utf-8')
 
 
 class StompProtocol(object):
-    EOF = b'\x00'
+
+    EOF = '\x00'
 
     def __init__(self):
         self._pending_parts = []
         self._frames_ready = []
-
-        self.decoder = codecs.lookup('utf-8')
         self.logger = logging.getLogger('StompProtocol')
+
+    if PYTHON3:
+        def _decode(self, byte_data):
+            if isinstance(byte_data, bytes):
+                return byte_data.decode('utf-8')
+
+            return byte_data
+    else:
+        def _decode(self, byte_data):
+            return utf8_decoder.decode(byte_data)[0]
 
     def reset(self):
         self._pending_parts = []
         self._frames_ready = []
 
     def add_data(self, data):
+        data = self._decode(data)
+
         if not self._pending_parts:
             if data[0] == '\n':
                 self._recv_heart_beat()
@@ -46,7 +63,6 @@ class StompProtocol(object):
                 self.add_data(parts[1])
 
     def _proccess_frame(self, data):
-        data = self.decoder.decode(data)[0]
         command, remaing = data.split('\n', 1)
 
         raw_headers, remaing = remaing.split('\n\n')

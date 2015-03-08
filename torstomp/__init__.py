@@ -6,16 +6,18 @@ from tornado.ioloop import IOLoop
 from tornado import gen
 
 from datetime import timedelta
-from protocol import StompProtocol
-from errors import StompError
-from subscription import Subscription
+
+from torstomp.protocol import StompProtocol, PYTHON3
+from torstomp.errors import StompError
+from torstomp.subscription import Subscription
 
 
 class TorStomp(object):
+
     VERSION = '1.1'
 
-    def __init__(self, host='localhost', connect_headers={},
-                 port=61613, on_error=None):
+    def __init__(self, host='localhost', port=61613, connect_headers={},
+                 on_error=None):
 
         self.host = host
         self.port = port
@@ -106,7 +108,7 @@ class TorStomp(object):
 
     def _send_frame(self, command, headers={}, body=''):
         buf = self._protocol.build_frame(command, headers, body)
-        return self.stream.write(buf)
+        return self.stream.write(self._encode(buf))
 
     def _set_connected(self, connected_frame):
         heartbeat = connected_frame.headers.get('heart-beat')
@@ -131,7 +133,7 @@ class TorStomp(object):
 
     def _do_heart_beat(self):
         self.logger.debug('Sending heartbeat')
-        self.stream.write('\n')
+        self.stream.write(b'\n')
         self._schedule_heart_beat()
 
     def _received_frames(self, frames):
@@ -179,3 +181,10 @@ class TorStomp(object):
         headers.update(subscription.extra_headers)
 
         self._send_frame('SUBSCRIBE', headers)
+
+    if PYTHON3:
+        def _encode(self, value):
+            return bytes(value, 'utf-8')
+    else:
+        def _encode(self, value):
+            return value
