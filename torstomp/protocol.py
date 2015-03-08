@@ -3,6 +3,7 @@ import codecs
 
 from frame import Frame
 
+
 class StompProtocol(object):
     EOF = b'\x00'
 
@@ -47,7 +48,6 @@ class StompProtocol(object):
     def _proccess_frame(self, data):
         data = self.decoder.decode(data)[0]
         command, remaing = data.split('\n', 1)
-
 
         raw_headers, remaing = remaing.split('\n\n')
         headers = dict([l.split(':', 1) for l in raw_headers.split('\n')])

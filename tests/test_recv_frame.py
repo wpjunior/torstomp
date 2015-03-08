@@ -1,11 +1,12 @@
 from unittest import TestCase
 
 from torstomp.protocol import StompProtocol
-from torstomp.frame import Frame
 
 from mock import MagicMock
 
+
 class TestRecvFrame(TestCase):
+
     def setUp(self):
         self.protocol = StompProtocol()
 
@@ -97,7 +98,7 @@ class TestRecvFrame(TestCase):
         )
 
         self.assertTrue(self.protocol._proccess_frame.called)
-        #self.assertEqual(self.protocol._proccess_frame.call_count, 2)
+        self.assertEqual(self.protocol._proccess_frame.call_count, 2)
         self.assertEqual(
             self.protocol._proccess_frame.call_args_list[0][0][0],
             'CONNECTED\n'
@@ -144,10 +145,11 @@ class TestRecvFrame(TestCase):
         self.assertTrue(self.protocol._recv_heart_beat.called)
         self.assertEqual(self.protocol._pending_parts, [])
 
+
 class TestBuildFrame(TestCase):
+
     def setUp(self):
         self.protocol = StompProtocol()
-
 
     def test_build_frame_with_body(self):
         buf = self.protocol.build_frame('HELLO', {
@@ -176,7 +178,9 @@ class TestBuildFrame(TestCase):
             'to:2\n\n'
             '\x00')
 
+
 class TestReadFrame(TestCase):
+
     def setUp(self):
         self.protocol = StompProtocol()
 

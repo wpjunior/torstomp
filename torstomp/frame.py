@@ -1,4 +1,5 @@
 class Frame(object):
+
     def __init__(self, command, headers, body):
         self.command = command
         self.headers = headers

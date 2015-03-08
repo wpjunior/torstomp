@@ -1,36 +1,28 @@
 import socket
 import logging
 
-from tornado.concurrent import return_future
 from tornado.iostream import IOStream
 from tornado.ioloop import IOLoop
 from tornado import gen
 
 from datetime import timedelta
-
 from protocol import StompProtocol
+from errors import StompError
+from subscription import Subscription
 
-class StompException(Exception):
-    def __init__(self, message, detail):
-        super(StompException, self).__init__(message)
-        self.detail = detail
-
-class Subscription(object):
-    def __init__(self, destination, id, ack, extra_headers, callback):
-        self.destination = destination
-        self.id = id
-        self.ack = ack
-        self.extra_headers = extra_headers
-        self.callback = callback
 
 class TorStomp(object):
     VERSION = '1.1'
 
-    def __init__(self, host='localhost', port=61613, on_error=None):
+    def __init__(self, host='localhost', connect_headers={},
+                 port=61613, on_error=None):
+
         self.host = host
         self.port = port
         self.logger = logging.getLogger('TorStomp')
 
+        self._connect_headers = connect_headers
+        self._connect_headers['accept-version'] = self.VERSION
         self._heart_beat_handler = None
         self._protocol = StompProtocol()
         self._subscriptions = {}
@@ -38,9 +30,8 @@ class TorStomp(object):
         self._on_error = on_error
 
     @gen.coroutine
-    def connect(self, connect_headers={}):
-        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM, 0)
-        self.stream = IOStream(s)
+    def connect(self):
+        self.stream = self._build_io_stream()
 
         try:
             yield self.stream.connect((self.host, self.port))
@@ -51,15 +42,13 @@ class TorStomp(object):
 
         self.stream.set_close_callback(self._on_disconnect)
         self.stream.read_until_close(
-            streaming_callback=self._on_streaming_data,
-            callback=self._on_finish_data)
+            streaming_callback=self._on_data,
+            callback=self._on_data)
 
         self._connected = True
         self._protocol.reset()
 
-        connect_headers['accept-version'] = self.VERSION
-
-        yield self._send_frame('CONNECT', connect_headers)
+        yield self._send_frame('CONNECT', self._connect_headers)
 
     def subscribe(self, destination, ack='auto', extra_headers={},
                   callback=None):
@@ -82,23 +71,22 @@ class TorStomp(object):
 
         return self._send_frame('SEND', headers, body)
 
+    def _build_io_stream(self):
+        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM, 0)
+        return IOStream(s)
+
     def _on_disconnect(self):
         self.logger.info('TCP connection end')
 
     def _on_data(self, data):
+        if not data:
+            return
+
         self._protocol.add_data(data)
 
         frames = self._protocol.pop_frames()
         if frames:
             self._received_frames(frames)
-
-    def _on_streaming_data(self, data):
-        if data:
-            self._on_data(data)
-
-    def _on_finish_data(self, data):
-        if data:
-            self._on_data(data)
 
     def _send_frame(self, command, headers={}, body=''):
         buf = self._protocol.build_frame(command, headers, body)
@@ -147,7 +135,8 @@ class TorStomp(object):
         subscription = self._subscriptions.get(subscription_header)
 
         if not subscription:
-            self.logger.error('Not found subscription %d' % subscription_header)
+            self.logger.error(
+                'Not found subscription %d' % subscription_header)
             return
 
         message_id = frame.headers.get('message-id')
@@ -161,7 +150,7 @@ class TorStomp(object):
 
         if self._on_error:
             self._on_error(
-                StompException(message, frame.body))
+                StompError(message, frame.body))
 
     def _received_unhandled_frame(self, frame):
         self.logger.warn('Received unhandled frame: %s', frame.command)
