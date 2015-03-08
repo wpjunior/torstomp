@@ -17,7 +17,8 @@ class TorStomp(object):
     VERSION = '1.1'
 
     def __init__(self, host='localhost', port=61613, connect_headers={},
-                 on_error=None):
+                 on_error=None, on_disconnect=None, on_connect=None,
+                 reconnect_max_attempts=-1, reconnect_timeout=1000):
 
         self.host = host
         self.port = port
@@ -26,10 +27,18 @@ class TorStomp(object):
         self._connect_headers = connect_headers
         self._connect_headers['accept-version'] = self.VERSION
         self._heart_beat_handler = None
+        self._connected = False
+        self._disconnecting = False
         self._protocol = StompProtocol()
         self._subscriptions = {}
         self._last_subscribe_id = 0
         self._on_error = on_error
+        self._on_disconnect = on_disconnect
+        self._on_connect = on_connect
+
+        self._reconnect_max_attempts = reconnect_max_attempts
+        self._reconnect_timeout = timedelta(milliseconds=reconnect_timeout)
+        self._reconnect_attempts = 0
 
     @gen.coroutine
     def connect(self):
@@ -39,18 +48,28 @@ class TorStomp(object):
             yield self.stream.connect((self.host, self.port))
             self.logger.debug('TCP connection estabilished')
         except socket.error as error:
-            self.logger.error('TCP connection connection error: %s', error)
+            self.logger.error('[attempt: %d] Connect error: %s', self._reconnect_attempts, error)
+            self._schedule_reconnect()
             return
 
-        self.stream.set_close_callback(self._on_disconnect)
+        self.stream.set_close_callback(self._on_disconnect_socket)
         self.stream.read_until_close(
             streaming_callback=self._on_data,
             callback=self._on_data)
 
         self._connected = True
+        self._disconnecting = False
+        self._reconnect_attempts = 0
         self._protocol.reset()
 
         yield self._send_frame('CONNECT', self._connect_headers)
+
+        for subscription in self._subscriptions.itervalues():
+            yield self._send_subscribe_frame(subscription)
+
+        if self._on_connect:
+            self._on_connect()
+
 
     def subscribe(self, destination, ack='auto', extra_headers={},
                   callback=None):
@@ -65,7 +84,9 @@ class TorStomp(object):
             callback=callback)
 
         self._subscriptions[str(self._last_subscribe_id)] = subscription
-        self._send_subscribe_frame(subscription)
+
+        if self._connected:
+            self._send_subscribe_frame(subscription)
 
     def send(self, destination, body='', headers={}):
         headers['destination'] = destination
@@ -93,8 +114,28 @@ class TorStomp(object):
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM, 0)
         return IOStream(s)
 
-    def _on_disconnect(self):
-        self.logger.info('TCP connection end')
+    def _on_disconnect_socket(self):
+        self._stop_scheduled_heart_beat()
+        self._connected = False
+
+        if self._disconnecting:
+            self.logger.info('TCP connection end gracefully')
+        else:
+            self.logger.info('TCP connection unexpected end')
+            self._schedule_reconnect()
+
+        if self._on_disconnect:
+            self._on_disconnect()
+
+    def _schedule_reconnect(self):
+        if self._reconnect_max_attempts == -1 or \
+               self._reconnect_attempts < self._reconnect_max_attempts:
+
+            self._reconnect_attempts += 1
+            self._reconnect_timeout_handler = IOLoop.current().add_timeout(
+                self._reconnect_timeout, self.connect)
+        else:
+            self.logger.error('All Connection attempts failed')
 
     def _on_data(self, data):
         if not data:
@@ -122,14 +163,19 @@ class TorStomp(object):
 
     def _set_heart_beat(self, time):
         self._heart_beat_delta = timedelta(milliseconds=time)
-        if self._heart_beat_handler:
-            self._heart_beat_handler.remove_timeout()
+        self._stop_scheduled_heart_beat()
 
         self._do_heart_beat()
 
     def _schedule_heart_beat(self):
         self._heart_beat_handler = IOLoop.current().add_timeout(
             self._heart_beat_delta, self._do_heart_beat)
+
+    def _stop_scheduled_heart_beat(self):
+        if self._heart_beat_handler:
+            IOLoop.current().remove_timeout(self._heart_beat_handler)
+
+        self._heart_beat_handler = None
 
     def _do_heart_beat(self):
         self.logger.debug('Sending heartbeat')
@@ -180,7 +226,7 @@ class TorStomp(object):
         }
         headers.update(subscription.extra_headers)
 
-        self._send_frame('SUBSCRIBE', headers)
+        return self._send_frame('SUBSCRIBE', headers)
 
     if PYTHON3:
         def _encode(self, value):

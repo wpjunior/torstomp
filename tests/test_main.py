@@ -61,10 +61,11 @@ class TestTorStomp(TestCase):
         self.assertEqual(subscription.extra_headers, {})
         self.assertEqual(subscription.callback, callback2)
 
-    def test_subscribe_write_in_stream(self):
+    def test_subscribe_when_connected_write_in_stream(self):
         callback = MagicMock()
 
         self.stomp.stream = MagicMock()
+        self.stomp._connected = True # fake connected
         self.stomp.subscribe('/topic/test', ack='client', extra_headers={
             'my-header': 'my-value'
         }, callback=callback)
@@ -77,6 +78,17 @@ class TestTorStomp(TestCase):
             b'destination:/topic/test\n'
             b'id:1\n'
             b'my-header:my-value\n\n\x00')
+
+    def test_subscribe_when_not_connected_write_in_stream(self):
+        callback = MagicMock()
+
+        self.stomp.stream = MagicMock()
+        self.stomp._connected = False
+        self.stomp.subscribe('/topic/test', ack='client', extra_headers={
+            'my-header': 'my-value'
+        }, callback=callback)
+
+        self.assertEqual(self.stomp.stream.write.call_count, 0)
 
     def test_send_write_in_stream(self):
         self.stomp.stream = MagicMock()

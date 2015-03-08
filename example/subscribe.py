@@ -22,11 +22,11 @@ def run():
     client = TorStomp('localhost', 61613, connect_headers={
         'heart-beat': '1000,1000'
     }, on_error=report_error)
+    client.subscribe('/queue/corumba', callback=on_message)
 
     yield client.connect()
 
-    client.send('/queue/corumba', body='ola', headers={})
-    client.subscribe('/queue/corumba', callback=on_message)
+    #client.send('/queue/corumba', body='ola', headers={})
 
 
 def main():
