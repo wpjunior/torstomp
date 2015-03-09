@@ -1,19 +1,62 @@
-from unittest import TestCase
-
 from torstomp import TorStomp
 from torstomp.subscription import Subscription
 from torstomp.frame import Frame
 
+from tornado.testing import AsyncTestCase, gen_test
+from tornado import gen
+
 from mock import MagicMock
 
 
-class TestTorStomp(TestCase):
+class TestTorStomp(AsyncTestCase):
 
     def setUp(self):
+        super(TestTorStomp, self).setUp()
         self.stomp = TorStomp()
 
     def test_accept_version_header(self):
         self.assertEqual(self.stomp._connect_headers['accept-version'], '1.1')
+
+    @gen_test
+    def test_connect_write_subscriptions(self):
+        callback = MagicMock()
+
+        self.stomp._build_io_stream = MagicMock()
+
+        io_stream = MagicMock()
+
+        # mock write operation
+        write_future = gen.Future()
+        write_future.set_result(None)
+        io_stream.write.return_value = write_future
+
+        # mock connect operation
+        connect_future = gen.Future()
+        connect_future.set_result(None)
+        io_stream.connect.return_value = connect_future
+
+        self.stomp._build_io_stream.return_value = io_stream
+
+        self.stomp.subscribe('/topic/test1', ack='client', extra_headers={
+            'my-header': 'my-value'
+        }, callback=callback)
+
+        yield self.stomp.connect()
+
+        write_calls = self.stomp.stream.write.call_args_list
+
+        self.assertEqual(
+            write_calls[0][0][0],
+            b'CONNECT\naccept-version:1.1\n\n\x00'
+        )
+
+        self.assertEqual(
+            write_calls[1][0][0],
+            b'SUBSCRIBE\n'
+            b'ack:client\ndestination:/topic/test1\n'
+            b'id:1\nmy-header:my-value\n\n'
+            b'\x00'
+        )
 
     def test_subscribe_create_single_subscription(self):
         callback = MagicMock()

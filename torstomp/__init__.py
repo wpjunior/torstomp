@@ -66,7 +66,7 @@ class TorStomp(object):
 
         yield self._send_frame('CONNECT', self._connect_headers)
 
-        for subscription in self._subscriptions.itervalues():
+        for subscription in self._subscriptions.values():
             yield self._send_subscribe_frame(subscription)
 
         if self._on_connect:
