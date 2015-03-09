@@ -48,7 +48,9 @@ class TorStomp(object):
             yield self.stream.connect((self.host, self.port))
             self.logger.debug('TCP connection estabilished')
         except socket.error as error:
-            self.logger.error('[attempt: %d] Connect error: %s', self._reconnect_attempts, error)
+            self.logger.error(
+                '[attempt: %d] Connect error: %s', self._reconnect_attempts,
+                error)
             self._schedule_reconnect()
             return
 
@@ -69,7 +71,6 @@ class TorStomp(object):
 
         if self._on_connect:
             self._on_connect()
-
 
     def subscribe(self, destination, ack='auto', extra_headers={},
                   callback=None):
@@ -129,7 +130,7 @@ class TorStomp(object):
 
     def _schedule_reconnect(self):
         if self._reconnect_max_attempts == -1 or \
-               self._reconnect_attempts < self._reconnect_max_attempts:
+                self._reconnect_attempts < self._reconnect_max_attempts:
 
             self._reconnect_attempts += 1
             self._reconnect_timeout_handler = IOLoop.current().add_timeout(
