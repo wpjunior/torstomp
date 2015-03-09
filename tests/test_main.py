@@ -108,9 +108,9 @@ class TestTorStomp(TestCase):
     def test_set_heart_beat_integration(self):
         self.stomp._set_heart_beat = MagicMock()
         self.stomp._on_data(
-            'CONNECTED\n'
-            'heart-beat:100,100\n\n'
-            '{}\x00')
+            b'CONNECTED\n'
+            b'heart-beat:100,100\n\n'
+            b'{}\x00')
 
         self.assertEqual(self.stomp._set_heart_beat.call_args[0][0], 100)
 
@@ -133,12 +133,12 @@ class TestTorStomp(TestCase):
         }, callback=callback)
 
         self.stomp._on_data(
-            'MESSAGE\n'
-            'subscription:1\n'
-            'message-id:007\n'
-            'destination:/topic/test\n'
-            '\n'
-            'blah\x00')
+            b'MESSAGE\n'
+            b'subscription:1\n'
+            b'message-id:007\n'
+            b'destination:/topic/test\n'
+            b'\n'
+            b'blah\x00')
 
         self.assertEqual(callback.call_count, 1)
 
@@ -195,6 +195,25 @@ class TestTorStomp(TestCase):
             b'subscription:123\n\n'
             b'\x00')
 
+    def test_ack_with_unicode_headers(self):
+        self.stomp.stream = MagicMock()
+
+        frame = Frame('MESSAGE', {
+            'subscription': u'123',
+            'message-id': u'321'
+        }, u'blah')
+
+        self.stomp.ack(frame)
+        self.assertEqual(self.stomp.stream.write.call_count, 1)
+        buf = self.stomp.stream.write.call_args[0][0]
+        self.assertIsInstance(buf, bytes)
+        self.assertEqual(
+            buf,
+            b'ACK\n'
+            b'message-id:321\n'
+            b'subscription:123\n\n'
+            b'\x00')
+
     def test_nack(self):
         self.stomp.stream = MagicMock()
 
@@ -205,8 +224,10 @@ class TestTorStomp(TestCase):
 
         self.stomp.nack(frame)
         self.assertEqual(self.stomp.stream.write.call_count, 1)
+        buf = self.stomp.stream.write.call_args[0][0]
+        self.assertIsInstance(buf, bytes)
         self.assertEqual(
-            self.stomp.stream.write.call_args[0][0],
+            buf,
             b'NACK\n'
             b'message-id:321\n'
             b'subscription:123\n\n'

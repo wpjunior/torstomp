@@ -7,7 +7,7 @@ from tornado import gen
 
 from datetime import timedelta
 
-from torstomp.protocol import StompProtocol, PYTHON3
+from torstomp.protocol import StompProtocol
 from torstomp.errors import StompError
 from torstomp.subscription import Subscription
 
@@ -46,7 +46,7 @@ class TorStomp(object):
 
         try:
             yield self.stream.connect((self.host, self.port))
-            self.logger.debug('TCP connection estabilished')
+            self.logger.info('Stomp connection estabilished')
         except socket.error as error:
             self.logger.error(
                 '[attempt: %d] Connect error: %s', self._reconnect_attempts,
@@ -150,7 +150,7 @@ class TorStomp(object):
 
     def _send_frame(self, command, headers={}, body=''):
         buf = self._protocol.build_frame(command, headers, body)
-        return self.stream.write(self._encode(buf))
+        return self.stream.write(buf)
 
     def _set_connected(self, connected_frame):
         heartbeat = connected_frame.headers.get('heart-beat')
@@ -228,10 +228,3 @@ class TorStomp(object):
         headers.update(subscription.extra_headers)
 
         return self._send_frame('SUBSCRIBE', headers)
-
-    if PYTHON3:
-        def _encode(self, value):
-            return bytes(value, 'utf-8')
-    else:
-        def _encode(self, value):
-            return value

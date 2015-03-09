@@ -159,11 +159,11 @@ class TestBuildFrame(TestCase):
 
         self.assertEqual(
             buf,
-            'HELLO\n'
-            'from:me\n'
-            'to:you\n\n'
-            'I Am The Walrus'
-            '\x00')
+            b'HELLO\n'
+            b'from:me\n'
+            b'to:you\n\n'
+            b'I Am The Walrus'
+            b'\x00')
 
     def test_build_frame_without_body(self):
         buf = self.protocol.build_frame('HI', {
@@ -173,10 +173,10 @@ class TestBuildFrame(TestCase):
 
         self.assertEqual(
             buf,
-            'HI\n'
-            'from:1\n'
-            'to:2\n\n'
-            '\x00')
+            b'HI\n'
+            b'from:1\n'
+            b'to:2\n\n'
+            b'\x00')
 
 
 class TestReadFrame(TestCase):

@@ -25,9 +25,18 @@ class StompProtocol(object):
                 return byte_data.decode('utf-8')
 
             return byte_data
+
+        def _encode(self, value):
+            return bytes(value, 'utf-8')
     else:
         def _decode(self, byte_data):
             return utf8_decoder.decode(byte_data)[0]
+
+        def _encode(self, value):
+            if isinstance(value, unicode):
+                return bytes(value)
+
+            return value
 
     def reset(self):
         self._pending_parts = []
@@ -84,7 +93,7 @@ class StompProtocol(object):
         lines.append(body)
         lines.append(self.EOF)
 
-        return ''.join(lines)
+        return self._encode(''.join(lines))
 
     def pop_frames(self):
         frames = self._frames_ready
