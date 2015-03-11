@@ -1,5 +1,6 @@
 import logging
 import sys
+import six
 
 from torstomp.frame import Frame
 
@@ -19,24 +20,17 @@ class StompProtocol(object):
         self._frames_ready = []
         self.logger = logging.getLogger('StompProtocol')
 
-    if PYTHON3:
-        def _decode(self, byte_data):
-            if isinstance(byte_data, bytes):
-                return byte_data.decode('utf-8')
+    def _decode(self, byte_data):
+        if isinstance(byte_data, six.binary_type):
+            return byte_data.decode('utf-8')
 
-            return byte_data
+        return byte_data
 
-        def _encode(self, value):
-            return bytes(value, 'utf-8')
-    else:
-        def _decode(self, byte_data):
-            return utf8_decoder.decode(byte_data)[0]
+    def _encode(self, value):
+        if isinstance(value, six.text_type):
+            return value.encode('utf-8')
 
-        def _encode(self, value):
-            if isinstance(value, unicode):
-                return bytes(value)
-
-            return value
+        return value
 
     def reset(self):
         self._pending_parts = []
@@ -93,7 +87,7 @@ class StompProtocol(object):
         lines.append(body)
         lines.append(self.EOF)
 
-        return self._encode(''.join(lines))
+        return b''.join([self._encode(line) for line in lines])
 
     def pop_frames(self):
         frames = self._frames_ready

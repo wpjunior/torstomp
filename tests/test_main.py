@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 from torstomp import TorStomp
 from torstomp.subscription import Subscription
 from torstomp.frame import Frame
@@ -147,6 +149,18 @@ class TestTorStomp(AsyncTestCase):
             b'destination:/topic/test\n'
             b'my-header:my-value\n\n'
             b'{}\x00')
+
+    def test_send_utf8_write_in_stream(self):
+        self.stomp.stream = MagicMock()
+        self.stomp.send('/topic/test', headers={
+            'my-header': 'my-value'
+        }, body=u'Wilson Júnior')
+
+        self.assertEqual(self.stomp.stream.write.call_count, 1)
+        self.assertEqual(
+            self.stomp.stream.write.call_args[0][0],
+            b'SEND\ncontent-length:14\ndestination:/topic/test\n'
+            b'my-header:my-value\n\nWilson J\xc3\xbanior\x00')
 
     def test_set_heart_beat_integration(self):
         self.stomp._set_heart_beat = MagicMock()

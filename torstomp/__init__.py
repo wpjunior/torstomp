@@ -91,7 +91,10 @@ class TorStomp(object):
 
     def send(self, destination, body='', headers={}):
         headers['destination'] = destination
-        headers['content-length'] = len(body)
+
+        if body:
+            body = self._protocol._encode(body)
+            headers['content-length'] = len(body)
 
         return self._send_frame('SEND', headers, body)
 

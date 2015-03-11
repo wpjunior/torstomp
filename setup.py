@@ -19,6 +19,7 @@ setup(
     packages=find_packages(exclude=["tests", "tests.*"]),
     platforms=['any'],
     install_requires=[
+        'six',
         'tornado'
     ],
     test_suite='nose.collector',

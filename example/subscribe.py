@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 import logging
 
 from tornado import gen
@@ -26,7 +28,7 @@ def run():
 
     yield client.connect()
 
-    #client.send('/queue/corumba', body='ola', headers={})
+    client.send('/queue/corumba', body=u'Wilson Júnior', headers={})
 
 
 def main():
