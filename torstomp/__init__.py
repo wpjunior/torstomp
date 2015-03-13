@@ -27,7 +27,7 @@ class TorStomp(object):
         self._connect_headers = connect_headers
         self._connect_headers['accept-version'] = self.VERSION
         self._heart_beat_handler = None
-        self._connected = False
+        self.connected = False
         self._disconnecting = False
         self._protocol = StompProtocol()
         self._subscriptions = {}
@@ -59,7 +59,7 @@ class TorStomp(object):
             streaming_callback=self._on_data,
             callback=self._on_data)
 
-        self._connected = True
+        self.connected = True
         self._disconnecting = False
         self._reconnect_attempts = 0
         self._protocol.reset()
@@ -86,7 +86,7 @@ class TorStomp(object):
 
         self._subscriptions[str(self._last_subscribe_id)] = subscription
 
-        if self._connected:
+        if self.connected:
             self._send_subscribe_frame(subscription)
 
     def send(self, destination, body='', headers={}):
@@ -120,7 +120,7 @@ class TorStomp(object):
 
     def _on_disconnect_socket(self):
         self._stop_scheduled_heart_beat()
-        self._connected = False
+        self.connected = False
 
         if self._disconnecting:
             self.logger.info('TCP connection end gracefully')

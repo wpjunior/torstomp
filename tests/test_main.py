@@ -110,7 +110,7 @@ class TestTorStomp(AsyncTestCase):
         callback = MagicMock()
 
         self.stomp.stream = MagicMock()
-        self.stomp._connected = True  # fake connected
+        self.stomp.connected = True  # fake connected
         self.stomp.subscribe('/topic/test', ack='client', extra_headers={
             'my-header': 'my-value'
         }, callback=callback)
@@ -128,7 +128,7 @@ class TestTorStomp(AsyncTestCase):
         callback = MagicMock()
 
         self.stomp.stream = MagicMock()
-        self.stomp._connected = False
+        self.stomp.connected = False
         self.stomp.subscribe('/topic/test', ack='client', extra_headers={
             'my-header': 'my-value'
         }, callback=callback)
