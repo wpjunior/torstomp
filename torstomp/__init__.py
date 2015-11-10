@@ -89,12 +89,16 @@ class TorStomp(object):
         if self.connected:
             self._send_subscribe_frame(subscription)
 
-    def send(self, destination, body='', headers={}):
+    def send(self, destination, body='', headers={}, send_content_length=True):
         headers['destination'] = destination
 
         if body:
             body = self._protocol._encode(body)
-            headers['content-length'] = len(body)
+
+            # ActiveMQ determines the type of a message by the
+            # inclusion of the content-length header
+            if send_content_length:
+                headers['content-length'] = len(body)
 
         return self._send_frame('SEND', headers, body)
 
