@@ -162,6 +162,20 @@ class TestTorStomp(AsyncTestCase):
             b'SEND\ncontent-length:14\ndestination:/topic/test\n'
             b'my-header:my-value\n\nWilson J\xc3\xbanior\x00')
 
+    def test_jms_compatible_send_write_in_stream(self):
+        self.stomp.stream = MagicMock()
+        self.stomp.send('/topic/test', headers={
+            'my-header': 'my-value',
+        }, body='{}', send_content_length=False)
+
+        self.assertEqual(self.stomp.stream.write.call_count, 1)
+        self.assertEqual(
+            self.stomp.stream.write.call_args[0][0],
+            b'SEND\n'
+            b'destination:/topic/test\n'
+            b'my-header:my-value\n\n'
+            b'{}\x00')
+
     def test_set_heart_beat_integration(self):
         self.stomp._set_heart_beat = MagicMock()
         self.stomp._on_data(
