@@ -42,5 +42,17 @@ if __name__ == '__main__':
     IOLoop.current().start()
 ```
 
+## Development
+
+With empty virtualenv for this project, run this command:
+```bash
+make setup
+```
+
+and run all tests =)
+```bash
+make test
+```
+
 ## Contributing
 Fork, patch, test, and send a pull request.
