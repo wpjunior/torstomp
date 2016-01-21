@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/wpjunior/torstomp.png?branch=master)](https://travis-ci.org/wpjunior/torstomp)
+
 # Torstomp
 Simple tornado stomp 1.1 client.
 
