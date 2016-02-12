@@ -1,3 +1,4 @@
+# -*- coding:utf-8 -*-
 import logging
 import sys
 import six
@@ -21,10 +22,14 @@ class StompProtocol(object):
         self.logger = logging.getLogger('StompProtocol')
 
     def _decode(self, byte_data):
-        if isinstance(byte_data, six.binary_type):
-            return byte_data.decode('utf-8')
+        try:
+            if isinstance(byte_data, six.binary_type):
+                return byte_data.decode('utf-8')
 
-        return byte_data
+            return byte_data
+        except UnicodeDecodeError:
+            logging.error(u"string was: {}".format(byte_data))
+            raise
 
     def _encode(self, value):
         if isinstance(value, six.text_type):
