@@ -1,12 +1,15 @@
 language: python
+cache:
+  directories:
+    - $HOME/.cache/pip
+sudo: false
 python:
   - "2.7"
   - "3.3"
   - "3.4"
 install:
-  - pip install flake8
-  - pip install tornado
-  # Deal with issue on Travis builders re: multiprocessing.Queue :(
-  - "sudo rm -rf /dev/shm && sudo ln -s /run/shm /dev/shm"
+  - make setup
+  # # Deal with issue on Travis builders re: multiprocessing.Queue :(
+  # - "sudo rm -rf /dev/shm && sudo ln -s /run/shm /dev/shm"
 
 script: make test

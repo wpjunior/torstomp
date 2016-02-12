@@ -22,10 +22,14 @@ setup(
         'six',
         'tornado'
     ],
-    test_suite='nose.collector',
-    tests_require=[
-        'mock',
-        'nose',
-        'coverage'
-    ]
+    extras_require={
+        'tests': [
+            'mock',
+            'nose',
+            'coverage',
+            "yanc",
+            "nose_focus",
+            "flake8",
+        ]
+    }
 )

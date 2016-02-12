@@ -1,17 +1,27 @@
 .PHONY: setup clean test test_unit flake8 autopep8 upload
 
 setup:
-	pip install -e .
+	@pip install -Ue .\[tests\]
 
 clean:
 	find . -name "*.pyc" -exec rm '{}' ';'
 
-test: test_unit flake8
+unit test_unit test:
+	@coverage run --branch `which nosetests` -v --with-yanc -s tests/
+	@$(MAKE) coverage
+	@$(MAKE) static
 
-test_unit:
-	python setup.py test
+focus:
+	@coverage run --branch `which nosetests` -vv --with-yanc --logging-level=WARNING --with-focus -i -s tests/
 
-flake8:
+coverage:
+	@coverage report -m --fail-under=83
+
+coverage_html:
+	@coverage html
+	@open htmlcov/index.html
+
+flake8 static:
 	flake8 torstomp/
 	flake8 tests/
 
