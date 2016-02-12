@@ -1,4 +1,6 @@
+# -*- coding:utf-8 -*-
 from unittest import TestCase
+import six
 
 from torstomp.protocol import StompProtocol
 
@@ -9,6 +11,24 @@ class TestRecvFrame(TestCase):
 
     def setUp(self):
         self.protocol = StompProtocol()
+
+    def test_decode(self):
+        self.assertEqual(
+            self.protocol._decode(u'éĂ'),
+            u'éĂ'
+        )
+
+    def test_on_decode_error_show_string(self):
+        data = MagicMock(spec=six.binary_type)
+        data.decode.side_effect = UnicodeDecodeError(
+            'hitchhiker',
+            b"",
+            42,
+            43,
+            'the universe and everything else'
+        )
+        with self.assertRaises(UnicodeDecodeError):
+            self.protocol._decode(data)
 
     def test_single_packet(self):
         self.protocol._proccess_frame = MagicMock()
