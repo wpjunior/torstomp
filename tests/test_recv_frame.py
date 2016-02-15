@@ -32,8 +32,8 @@ class TestRecvFrame(TestCase):
 
     def test_single_packet(self):
         self.protocol.add_data(
-            'CONNECT\n'
-            'accept-version:1.0\n\n\x00'
+            b'CONNECT\n'
+            b'accept-version:1.0\n\n\x00'
         )
 
         frames = self.protocol.pop_frames()
@@ -47,8 +47,8 @@ class TestRecvFrame(TestCase):
 
     def test_parcial_packet(self):
         stream_data = (
-            'CONNECT\n',
-            'accept-version:1.0\n\n\x00',
+            b'CONNECT\n',
+            b'accept-version:1.0\n\n\x00',
         )
 
         for data in stream_data:
@@ -63,10 +63,10 @@ class TestRecvFrame(TestCase):
 
     def test_multi_parcial_packet1(self):
         stream_data = (
-            'CONNECT\n',
-            'accept-version:1.0\n\n\x00\n',
-            'CONNECTED\n',
-            'version:1.0\n\n\x00\n'
+            b'CONNECT\n',
+            b'accept-version:1.0\n\n\x00\n',
+            b'CONNECTED\n',
+            b'version:1.0\n\n\x00\n'
         )
 
         for data in stream_data:
@@ -87,11 +87,11 @@ class TestRecvFrame(TestCase):
 
     def test_multi_parcial_packet2(self):
         stream_data = (
-            'CONNECTED\n'
-            'version:1.0\n\n',
-            '\x00\nERROR\n',
-            'header:1.0\n\n',
-            'Hey dude\x00\n',
+            b'CONNECTED\n'
+            b'version:1.0\n\n',
+            b'\x00\nERROR\n',
+            b'header:1.0\n\n',
+            b'Hey dude\x00\n',
         )
 
         for data in stream_data:
@@ -112,11 +112,11 @@ class TestRecvFrame(TestCase):
 
     def test_multi_parcial_packet_with_utf8(self):
         stream_data = (
-            'CONNECTED\n'
-            'accept-version:1.0\n\n',
-            '\x00\nERROR\n',
-            'header:1.0\n\n\xc3',
-            '\xa7\x00\n',
+            b'CONNECTED\n'
+            b'accept-version:1.0\n\n',
+            b'\x00\nERROR\n',
+            b'header:1.0\n\n\xc3',
+            b'\xa7\x00\n',
         )
 
         for data in stream_data:
@@ -130,7 +130,7 @@ class TestRecvFrame(TestCase):
 
     def test_heart_beat_packet1(self):
         self.protocol._recv_heart_beat = MagicMock()
-        self.protocol.add_data('\n')
+        self.protocol.add_data(b'\n')
 
         self.assertEqual(self.protocol._pending_parts, [])
         self.assertTrue(self.protocol._recv_heart_beat.called)
@@ -138,8 +138,8 @@ class TestRecvFrame(TestCase):
     def test_heart_beat_packet2(self):
         self.protocol._recv_heart_beat = MagicMock()
         self.protocol.add_data(
-            'CONNECT\n'
-            'accept-version:1.0\n\n\x00\n'
+            b'CONNECT\n'
+            b'accept-version:1.0\n\n\x00\n'
         )
 
         self.assertTrue(self.protocol._recv_heart_beat.called)
@@ -148,8 +148,8 @@ class TestRecvFrame(TestCase):
     def test_heart_beat_packet3(self):
         self.protocol._recv_heart_beat = MagicMock()
         self.protocol.add_data(
-            '\nCONNECT\n'
-            'accept-version:1.0\n\n\x00'
+            b'\nCONNECT\n'
+            b'accept-version:1.0\n\n\x00'
         )
 
         frames = self.protocol.pop_frames()
@@ -203,8 +203,8 @@ class TestReadFrame(TestCase):
 
     def test_single_packet(self):
         self.protocol.add_data(
-            'CONNECT\n'
-            'accept-version:1.0\n\n\x00'
+            b'CONNECT\n'
+            b'accept-version:1.0\n\n\x00'
         )
 
         self.assertEqual(len(self.protocol._frames_ready), 1)

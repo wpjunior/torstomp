@@ -188,7 +188,7 @@ class TorStomp(object):
 
     def _do_heart_beat(self):
         self.logger.debug('Sending heartbeat')
-        self.stream.write(b'\n')
+        self.stream.write(self._protocol.HEART_BEAT)
         self._schedule_heart_beat()
 
     def _received_frames(self, frames):

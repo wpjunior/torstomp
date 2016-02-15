@@ -14,7 +14,8 @@ if not PYTHON3:
 
 class StompProtocol(object):
 
-    EOF = '\x00'
+    HEART_BEAT = b'\n'
+    EOF = b'\x00'
 
     def __init__(self):
         self._pending_parts = []
@@ -42,31 +43,25 @@ class StompProtocol(object):
         self._frames_ready = []
 
     def add_data(self, data):
-        if not self._pending_parts:
-            if data[0] == '\n':
-                self._recv_heart_beat()
-                data = data[1:]
+        if not self._pending_parts and data.startswith(self.HEART_BEAT):
+            self._recv_heart_beat()
+            data = data[1:]
 
-                if data:
-                    return self.add_data(data)
-
-        parts = data.split(self.EOF, 1)
-        len_parts = len(parts)
-
-        if len_parts == 1:
             if data:
-                self._pending_parts.append(data)
+                return self.add_data(data)
 
-        elif len_parts > 1:
-            if parts[0]:
-                self._pending_parts.append(parts[0])
+        before_eof, sep, after_eof = data.partition(self.EOF)
 
-            frame = ''.join(self._pending_parts)
+        if before_eof:
+            self._pending_parts.append(before_eof)
+
+        if sep:
+            frame_data = b''.join(self._pending_parts)
             self._pending_parts = []
-            self._proccess_frame(frame)
+            self._proccess_frame(frame_data)
 
-            if parts[1]:
-                self.add_data(parts[1])
+        if after_eof:
+            self.add_data(after_eof)
 
     def _proccess_frame(self, data):
         data = self._decode(data)
@@ -87,7 +82,7 @@ class StompProtocol(object):
         for key, value in sorted(headers.items()):
             lines.append('%s:%s\n' % (key, value))
 
-        lines.append("\n")
+        lines.append('\n')
         lines.append(body)
         lines.append(self.EOF)
 

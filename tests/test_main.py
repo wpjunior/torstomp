@@ -222,10 +222,10 @@ class TestTorStomp(AsyncTestCase):
     def test_on_error_called(self):
         self.stomp._on_error = MagicMock()
         self.stomp._on_data(
-            'ERROR\n'
-            'message:Invalid error, blah, blah, blah\n'
-            '\n'
-            'Detail Error: blah, blah, blah\x00')
+            b'ERROR\n'
+            b'message:Invalid error, blah, blah, blah\n'
+            b'\n'
+            b'Detail Error: blah, blah, blah\x00')
 
         self.assertEqual(self.stomp._on_error.call_count, 1)
 
