@@ -19,18 +19,19 @@ class TorStomp(object):
 
     def __init__(self, host='localhost', port=61613, connect_headers={},
                  on_error=None, on_disconnect=None, on_connect=None,
-                 reconnect_max_attempts=-1, reconnect_timeout=1000):
+                 reconnect_max_attempts=-1, reconnect_timeout=1000,
+                 log_name='TorStomp'):
 
         self.host = host
         self.port = port
-        self.logger = logging.getLogger('TorStomp')
+        self.logger = logging.getLogger(log_name)
 
         self._connect_headers = connect_headers
         self._connect_headers['accept-version'] = self.VERSION
         self._heart_beat_handler = None
         self.connected = False
         self._disconnecting = False
-        self._protocol = StompProtocol()
+        self._protocol = StompProtocol(log_name=log_name)
         self._subscriptions = {}
         self._last_subscribe_id = 0
         self._on_error = on_error

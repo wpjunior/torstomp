@@ -17,10 +17,10 @@ class StompProtocol(object):
     HEART_BEAT = b'\n'
     EOF = b'\x00'
 
-    def __init__(self):
+    def __init__(self, log_name='StompProtocol'):
         self._pending_parts = []
         self._frames_ready = []
-        self.logger = logging.getLogger('StompProtocol')
+        self.logger = logging.getLogger(log_name)
 
     def _decode(self, byte_data):
         try:
