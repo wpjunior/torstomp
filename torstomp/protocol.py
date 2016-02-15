@@ -42,8 +42,6 @@ class StompProtocol(object):
         self._frames_ready = []
 
     def add_data(self, data):
-        data = self._decode(data)
-
         if not self._pending_parts:
             if data[0] == '\n':
                 self._recv_heart_beat()
@@ -71,6 +69,7 @@ class StompProtocol(object):
                 self.add_data(parts[1])
 
     def _proccess_frame(self, data):
+        data = self._decode(data)
         command, remaing = data.split('\n', 1)
 
         raw_headers, remaing = remaing.split('\n\n')

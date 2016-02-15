@@ -31,137 +31,134 @@ class TestRecvFrame(TestCase):
             self.protocol._decode(data)
 
     def test_single_packet(self):
-        self.protocol._proccess_frame = MagicMock()
-
         self.protocol.add_data(
             'CONNECT\n'
             'accept-version:1.0\n\n\x00'
         )
 
-        self.assertTrue(self.protocol._proccess_frame.called)
-        self.assertEqual(self.protocol._proccess_frame.call_count, 1)
-        self.assertEqual(
-            self.protocol._proccess_frame.call_args[0][0],
-            'CONNECT\n'
-            'accept-version:1.0\n\n'
-        )
+        frames = self.protocol.pop_frames()
+
+        self.assertEqual(len(frames), 1)
+        self.assertEqual(frames[0].command, u'CONNECT')
+        self.assertEqual(frames[0].headers, {u'accept-version': u'1.0'})
+        self.assertEqual(frames[0].body, None)
+
         self.assertEqual(self.protocol._pending_parts, [])
 
     def test_parcial_packet(self):
-        self.protocol._proccess_frame = MagicMock()
-
-        self.protocol.add_data(
-            'CONNECT\n'
+        stream_data = (
+            'CONNECT\n',
+            'accept-version:1.0\n\n\x00',
         )
 
-        self.protocol.add_data(
-            'accept-version:1.0\n\n\x00'
-        )
+        for data in stream_data:
+            self.protocol.add_data(data)
 
-        self.assertTrue(self.protocol._proccess_frame.called)
-        self.assertEqual(self.protocol._proccess_frame.call_count, 1)
-        self.assertEqual(
-            self.protocol._proccess_frame.call_args[0][0],
-            'CONNECT\n'
-            'accept-version:1.0\n\n'
-        )
-        self.assertEqual(self.protocol._pending_parts, [])
+        frames = self.protocol.pop_frames()
+
+        self.assertEqual(len(frames), 1)
+        self.assertEqual(frames[0].command, u'CONNECT')
+        self.assertEqual(frames[0].headers, {u'accept-version': u'1.0'})
+        self.assertEqual(frames[0].body, None)
 
     def test_multi_parcial_packet1(self):
-        self.protocol._proccess_frame = MagicMock()
-
-        self.protocol.add_data(
-            'CONNECT\n'
+        stream_data = (
+            'CONNECT\n',
+            'accept-version:1.0\n\n\x00\n',
+            'CONNECTED\n',
+            'version:1.0\n\n\x00\n'
         )
 
-        self.protocol.add_data(
-            'accept-version:1.0\n\n\x00\n'
-        )
+        for data in stream_data:
+            self.protocol.add_data(data)
 
-        self.protocol.add_data(
-            'CONNECTED\n'
-        )
+        frames = self.protocol.pop_frames()
+        self.assertEqual(len(frames), 2)
 
-        self.protocol.add_data(
-            'accept-version:1.0\n\n\x00\n'
-        )
+        self.assertEqual(frames[0].command, u'CONNECT')
+        self.assertEqual(frames[0].headers, {u'accept-version': u'1.0'})
+        self.assertEqual(frames[0].body, None)
 
-        self.assertTrue(self.protocol._proccess_frame.called)
-        self.assertEqual(self.protocol._proccess_frame.call_count, 2)
-        self.assertEqual(
-            self.protocol._proccess_frame.call_args_list[0][0][0],
-            'CONNECT\n'
-            'accept-version:1.0\n\n'
-        )
+        self.assertEqual(frames[1].command, u'CONNECTED')
+        self.assertEqual(frames[1].headers, {u'version': u'1.0'})
+        self.assertEqual(frames[1].body, None)
 
-        self.assertEqual(
-            self.protocol._proccess_frame.call_args_list[1][0][0],
-            'CONNECTED\n'
-            'accept-version:1.0\n\n'
-        )
         self.assertEqual(self.protocol._pending_parts, [])
 
     def test_multi_parcial_packet2(self):
-        self.protocol._proccess_frame = MagicMock()
-
-        self.protocol.add_data(
+        stream_data = (
             'CONNECTED\n'
-            'accept-version:1.0\n\n'
+            'version:1.0\n\n',
+            '\x00\nERROR\n',
+            'header:1.0\n\n',
+            'Hey dude\x00\n',
         )
 
-        self.protocol.add_data(
-            '\x00\nERROR\n'
-        )
+        for data in stream_data:
+            self.protocol.add_data(data)
 
-        self.protocol.add_data(
-            'header:1.0\n\n\x00\n'
-        )
+        frames = self.protocol.pop_frames()
+        self.assertEqual(len(frames), 2)
 
-        self.assertTrue(self.protocol._proccess_frame.called)
-        self.assertEqual(self.protocol._proccess_frame.call_count, 2)
-        self.assertEqual(
-            self.protocol._proccess_frame.call_args_list[0][0][0],
+        self.assertEqual(frames[0].command, u'CONNECTED')
+        self.assertEqual(frames[0].headers, {u'version': u'1.0'})
+        self.assertEqual(frames[0].body, None)
+
+        self.assertEqual(frames[1].command, u'ERROR')
+        self.assertEqual(frames[1].headers, {u'header': u'1.0'})
+        self.assertEqual(frames[1].body, u'Hey dude')
+
+        self.assertEqual(self.protocol._pending_parts, [])
+
+    def test_multi_parcial_packet_with_utf8(self):
+        stream_data = (
             'CONNECTED\n'
-            'accept-version:1.0\n\n'
+            'accept-version:1.0\n\n',
+            '\x00\nERROR\n',
+            'header:1.0\n\n\xc3',
+            '\xa7\x00\n',
         )
+
+        for data in stream_data:
+            self.protocol.add_data(data)
+
+        self.assertEqual(len(self.protocol._frames_ready), 2)
         self.assertEqual(self.protocol._pending_parts, [])
-        self.assertEqual(
-            self.protocol._proccess_frame.call_args_list[1][0][0],
-            'ERROR\n'
-            'header:1.0\n\n'
-        )
-        self.assertEqual(self.protocol._pending_parts, [])
+
+        self.assertEqual(self.protocol._frames_ready[0].body, None)
+        self.assertEqual(self.protocol._frames_ready[1].body, u'ç')
 
     def test_heart_beat_packet1(self):
-        self.protocol._proccess_frame = MagicMock()
         self.protocol._recv_heart_beat = MagicMock()
         self.protocol.add_data('\n')
-        self.assertFalse(self.protocol._proccess_frame.called)
 
-        self.assertTrue(self.protocol._recv_heart_beat.called)
         self.assertEqual(self.protocol._pending_parts, [])
+        self.assertTrue(self.protocol._recv_heart_beat.called)
 
     def test_heart_beat_packet2(self):
-        self.protocol._proccess_frame = MagicMock()
         self.protocol._recv_heart_beat = MagicMock()
         self.protocol.add_data(
             'CONNECT\n'
             'accept-version:1.0\n\n\x00\n'
         )
 
-        self.assertTrue(self.protocol._proccess_frame.called)
         self.assertTrue(self.protocol._recv_heart_beat.called)
         self.assertEqual(self.protocol._pending_parts, [])
 
     def test_heart_beat_packet3(self):
-        self.protocol._proccess_frame = MagicMock()
         self.protocol._recv_heart_beat = MagicMock()
         self.protocol.add_data(
             '\nCONNECT\n'
             'accept-version:1.0\n\n\x00'
         )
 
-        self.assertTrue(self.protocol._proccess_frame.called)
+        frames = self.protocol.pop_frames()
+        self.assertEqual(len(frames), 1)
+
+        self.assertEqual(frames[0].command, u'CONNECT')
+        self.assertEqual(frames[0].headers, {u'accept-version': u'1.0'})
+        self.assertEqual(frames[0].body, None)
+
         self.assertTrue(self.protocol._recv_heart_beat.called)
         self.assertEqual(self.protocol._pending_parts, [])
 
