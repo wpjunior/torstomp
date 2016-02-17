@@ -7,9 +7,8 @@ python:
   - "2.7"
   - "3.3"
   - "3.4"
+  - "3.5"
 install:
   - make setup
-  # # Deal with issue on Travis builders re: multiprocessing.Queue :(
-  # - "sudo rm -rf /dev/shm && sudo ln -s /run/shm /dev/shm"
 
 script: make test
