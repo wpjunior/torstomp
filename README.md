@@ -1,5 +1,6 @@
 [![Build Status](https://travis-ci.org/wpjunior/torstomp.png?branch=master)](https://travis-ci.org/wpjunior/torstomp)
 [![Coverage Status](https://coveralls.io/repos/github/wpjunior/torstomp/badge.svg?branch=master)](https://coveralls.io/github/wpjunior/torstomp?branch=master)
+[![PyPI version](https://badge.fury.io/py/torstomp.svg)](https://badge.fury.io/py/torstomp)
 
 # Torstomp
 Simple tornado stomp 1.1 client.
