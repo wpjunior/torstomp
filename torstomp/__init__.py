@@ -1,6 +1,7 @@
 # -*- coding:utf-8 -*-
 import socket
 import logging
+import datetime
 
 from tornado.iostream import IOStream
 from tornado.ioloop import IOLoop
@@ -30,6 +31,7 @@ class TorStomp(object):
         self._connect_headers['accept-version'] = self.VERSION
         self._heart_beat_handler = None
         self.connected = False
+        self.disconnected_date = None
         self._disconnecting = False
         self._protocol = StompProtocol(log_name=log_name)
         self._subscriptions = {}
@@ -127,6 +129,7 @@ class TorStomp(object):
     def _on_disconnect_socket(self):
         self._stop_scheduled_heart_beat()
         self.connected = False
+        self.disconnected_date = datetime.datetime.now()
 
         if self._disconnecting:
             self.logger.info('TCP connection end gracefully')
