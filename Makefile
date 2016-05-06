@@ -15,7 +15,7 @@ focus:
 	@coverage run --branch `which nosetests` -vv --with-yanc --logging-level=WARNING --with-focus -i -s tests/
 
 coverage:
-	@coverage report -m --fail-under=83
+	@coverage report -m --fail-under=80
 
 coverage_html:
 	@coverage html
