@@ -2,7 +2,7 @@
 
 from setuptools import find_packages, setup
 
-version = '0.1.7'
+version = '0.1.8'
 
 setup(
     name='torstomp',
