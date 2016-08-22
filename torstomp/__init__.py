@@ -3,7 +3,7 @@ import socket
 import logging
 import datetime
 
-from tornado.iostream import IOStream
+from tornado.iostream import IOStream, StreamClosedError
 from tornado.ioloop import IOLoop
 from tornado import gen
 
@@ -192,7 +192,12 @@ class TorStomp(object):
 
     def _do_heart_beat(self):
         self.logger.debug('Sending heartbeat')
-        self.stream.write(self._protocol.HEART_BEAT)
+
+        try:
+            self.stream.write(self._protocol.HEART_BEAT)
+        except StreamClosedError:
+            logging.warning('Heart beat failed: stream is closed')
+
         self._schedule_heart_beat()
 
     def _received_frames(self, frames):

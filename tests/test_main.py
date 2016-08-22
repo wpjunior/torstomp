@@ -6,6 +6,7 @@ from torstomp.frame import Frame
 
 from tornado.testing import AsyncTestCase, gen_test
 from tornado import gen
+from tornado.iostream import StreamClosedError
 
 from mock import MagicMock
 
@@ -187,6 +188,17 @@ class TestTorStomp(AsyncTestCase):
 
     def test_do_heart_beat(self):
         self.stomp.stream = MagicMock()
+        self.stomp._schedule_heart_beat = MagicMock()
+        self.stomp._do_heart_beat()
+
+        self.assertEqual(self.stomp.stream.write.call_count, 1)
+        self.assertEqual(self.stomp.stream.write.call_args[0][0], b'\n')
+
+        self.assertEqual(self.stomp._schedule_heart_beat.call_count, 1)
+
+    def test_do_heart_beat_with_closed_stream(self):
+        self.stomp.stream = MagicMock()
+        self.stomp.stream.write.side_effect = StreamClosedError()
         self.stomp._schedule_heart_beat = MagicMock()
         self.stomp._do_heart_beat()
 
