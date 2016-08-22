@@ -2,7 +2,7 @@
 
 from setuptools import find_packages, setup
 
-version = '0.1.8'
+version = '0.1.9'
 
 setup(
     name='torstomp',
@@ -20,7 +20,7 @@ setup(
     platforms=['any'],
     install_requires=[
         'six',
-        'tornado'
+        'tornado',
     ],
     extras_require={
         'tests': [
