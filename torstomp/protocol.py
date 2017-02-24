@@ -67,7 +67,7 @@ class StompProtocol(object):
         data = self._decode(data)
         command, remaing = data.split('\n', 1)
 
-        raw_headers, remaing = remaing.split('\n\n')
+        raw_headers, remaing = remaing.split('\n\n', 1)
         headers = dict([l.split(':', 1) for l in raw_headers.split('\n')])
         body = remaing if remaing else None
 
