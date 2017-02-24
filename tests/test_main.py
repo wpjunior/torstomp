@@ -231,6 +231,30 @@ class TestTorStomp(AsyncTestCase):
         self.assertEqual(frame.headers['subscription'], '1')
         self.assertEqual(callback.call_args[0][1], 'blah')
 
+    def test_subscription_called_with_double_line_breaks_on_body(self):
+        callback = MagicMock()
+
+        self.stomp.stream = MagicMock()
+        self.stomp.subscribe('/topic/test', ack='client', extra_headers={
+            'my-header': 'my-value'
+        }, callback=callback)
+
+        self.stomp._on_data(
+            b'MESSAGE\n'
+            b'subscription:1\n'
+            b'message-id:007\n'
+            b'destination:/topic/test\n'
+            b'\n'
+            b'blahh-line-a\n\nblahh-line-b\n\nblahh-line-c\x00')
+
+        self.assertEqual(callback.call_count, 1)
+
+        frame = callback.call_args[0][0]
+        self.assertIsInstance(frame, Frame)
+        self.assertEqual(frame.headers['message-id'], '007')
+        self.assertEqual(frame.headers['subscription'], '1')
+        self.assertEqual(callback.call_args[0][1], 'blahh-line-a\n\nblahh-line-b\n\nblahh-line-c')
+
     def test_on_error_called(self):
         self.stomp._on_error = MagicMock()
         self.stomp._on_data(
