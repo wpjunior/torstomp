@@ -93,6 +93,13 @@ class TorStomp(object):
         if self.connected:
             self._send_subscribe_frame(subscription)
 
+    def unsubscribe(self, subscription):
+        subscription_id = str(subscription.id)
+
+        if subscription_id in self._subscriptions.keys():
+            self._send_unsubscribe_frame(subscription)
+            del self._subscriptions[subscription_id]
+
     def send(self, destination, body='', headers={}, send_content_length=True):
         headers['destination'] = destination
 
@@ -245,3 +252,9 @@ class TorStomp(object):
         headers.update(subscription.extra_headers)
 
         return self._send_frame('SUBSCRIBE', headers)
+
+    def _send_unsubscribe_frame(self, subscription):
+        headers = {
+            'id': subscription.id,
+        }
+        return self._send_frame('UNSUBSCRIBE', headers)

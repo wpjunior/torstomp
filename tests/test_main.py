@@ -339,3 +339,21 @@ class TestTorStomp(AsyncTestCase):
             b'message-id:321\n'
             b'subscription:123\n\n'
             b'\x00')
+
+    def test_unsubscribe(self):
+        self.stomp.stream = MagicMock()
+
+        self.stomp.subscribe("queue/dummyqueue")
+
+        last_subscribe_id = str(self.stomp._last_subscribe_id)
+        subscription = self.stomp._subscriptions[last_subscribe_id]
+
+        self.stomp.unsubscribe(subscription)
+
+        self.assertFalse(last_subscribe_id in self.stomp._subscriptions.keys())
+        self.assertEqual(self.stomp.stream.write.call_count, 1)
+        self.assertEqual(
+            self.stomp.stream.write.call_args[0][0],
+            b'UNSUBSCRIBE\n'
+            b'id:1\n\n'
+            b'\x00')
