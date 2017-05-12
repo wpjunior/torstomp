@@ -256,5 +256,6 @@ class TorStomp(object):
     def _send_unsubscribe_frame(self, subscription):
         headers = {
             'id': subscription.id,
+            'destination': subscription.destination
         }
         return self._send_frame('UNSUBSCRIBE', headers)
