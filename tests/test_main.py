@@ -356,5 +356,5 @@ class TestTorStomp(AsyncTestCase):
             self.stomp.stream.write.call_args[0][0],
             b'UNSUBSCRIBE\n'
             b'destination:/queue/dummyqueue\n'
-            b'id:1\n\n'            
+            b'id:1\n\n'
             b'\x00')
